@@ -1,5 +1,0 @@
-/home/panagiotis/Desktop/Project-Emiris/CMakeFiles/rebuild_cache.dir
-/home/panagiotis/Desktop/Project-Emiris/CMakeFiles/cgal_check_build_system.dir
-/home/panagiotis/Desktop/Project-Emiris/CMakeFiles/ALL_CGAL_TARGETS.dir
-/home/panagiotis/Desktop/Project-Emiris/CMakeFiles/edit_cache.dir
-/home/panagiotis/Desktop/Project-Emiris/CMakeFiles/test.dir
