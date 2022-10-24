@@ -1,5 +1,0 @@
-/home/stelios/Desktop/PROJECT/CMakeFiles/test.dir
-/home/stelios/Desktop/PROJECT/CMakeFiles/ALL_CGAL_TARGETS.dir
-/home/stelios/Desktop/PROJECT/CMakeFiles/cgal_check_build_system.dir
-/home/stelios/Desktop/PROJECT/CMakeFiles/edit_cache.dir
-/home/stelios/Desktop/PROJECT/CMakeFiles/rebuild_cache.dir
