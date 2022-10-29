@@ -1,4 +1,5 @@
 
+
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 
 #include <CGAL/convex_hull_2.h>
@@ -25,7 +26,7 @@ typedef std::vector<Segment_2> segments;                // vector me stoixeia pl
 typedef std::vector<double> dist;
 typedef std::vector<Point_2>::iterator pveciterator; // iterator se vector me ta point
 Point_2 pointdistance(Points, segments, dist);
-int findintersection(Segment_2, Segment_2, Segment_2);
+int findintersection(Segment_2, Segment_2, segments,Segment_2);
 int check_inside(Point_2, Point_2 *, Point_2 *, K);
 int main()
 {
@@ -90,7 +91,7 @@ int main()
     {
       temp.push_back(Segment_2(t, chain[c][0]));           // auth einai h edge me to interior point kai thn mia korufh ths akmhs ths polugwnikhs
       temp.push_back(Segment_2(t, chain[c][1]));           // auth einai h edge me to interior point kai thn allh korufh ths akmhs ths polugwnikhs grammhs
-      flag = findintersection(temp[0], temp[1], chain[c]); // kalw gia na dw an h akmh auth einai orath
+      flag = findintersection(temp[0], temp[1], chain,chain[c]); // kalw gia na dw an h akmh auth einai orath
       if (flag == 0)                                       // den exw interactions ara exw pithano edge
       {
         visible.push_back(chain[c]);
@@ -134,10 +135,10 @@ int main()
         flag1 = check_inside(result1[e], &*keep.begin(), &*keep.end(), K()); // check an me to neo edge pou ekana exw periklisei ola ta points kai den afhsa eswteriko point apexw apo to polugwno
         e++;
       }
-      if (flag1==1 || p.is_simple()==0){ ///////SOSSSSS DEN EXW ELEGXEI KATHOLOU AN LEITOURGEI 
+      if (flag1==1 || p.is_simple()==0){ ///////SOSSSSS DEN EXW ELEGXEI KATHOLOU AN LEITOURGEI
         //se periptwsh pou den prepei na travhxw authn thn grammh
         chain.erase(chain.begin()+pos);
-        chain.erase(chain.begin()+pos+1);
+        chain.erase(chain.begin()+pos);
         chain.insert(chain.begin()+pos,tempppp);
         result1.push_back(t);
         visible.erase(std::find(visible.begin(), visible.end(), tempppp));
@@ -153,7 +154,7 @@ int main()
     std::cout << chain[k][0] << "<----" << chain[k][1] << std::endl; 
     k++; 
   }
-  //CGAL::draw(p);
+  CGAL::draw(p);
 }
 
 Point_2 pointdistance(Points interior, segments ch, dist d)
@@ -175,26 +176,38 @@ Point_2 pointdistance(Points interior, segments ch, dist d)
   }
   return temppoint;
 }
-int findintersection(Segment_2 interioredge1, Segment_2 interioredge2, Segment_2 chainedge)
+int findintersection(Segment_2 interioredge1, Segment_2 interioredge2, segments pchain,Segment_2 chainedge)
 {
-  int flag = 0;
-  auto result = CGAL::intersection(interioredge1, chainedge);
-  if (result)
+  int c = 0;
+  int flag;
+  while (c < pchain.size())
   {
-    Point_2 *p = boost::get<Point_2>(&*result); // Ah intersect an den exw intersect tha epistrefei to koino point ton edges(apo ekei pou tis enwnw)
-    if (*p != chainedge[0])
+    flag = 0;
+    auto result = CGAL::intersection(interioredge1, pchain[c]);
+    if (result)
     {
-      flag = 1;
+      Point_2 *p = boost::get<Point_2>(&*result); // Ah intersect an den exw intersect tha epistrefei to koino point ton edges(apo ekei pou tis enwnw)
+      if (pchain[c]==chainedge && *p == interioredge1[1])
+      {
+        flag=0;
+      }
+      else{
+        flag =1;
+      }
     }
-  }
-  result = CGAL::intersection(interioredge2, chainedge);
-  if (result)
-  {
-    Point_2 *p = boost::get<Point_2>(&*result); // Ah intersect an den exw intersect tha epistrefei to koino point ton edges(apo ekei pou tis enwnw)
-    if (*p != chainedge[1])
+    result = CGAL::intersection(interioredge2, pchain[c]);
+    if (result)
     {
-      flag = 1;
+      Point_2 *p = boost::get<Point_2>(&*result); // Ah intersect an den exw intersect tha epistrefei to koino point ton edges(apo ekei pou tis enwnw)
+      if (pchain[c]==chainedge && *p == interioredge2[1])
+      {
+        flag = 0;
+      }
+      else{
+        flag=1;
+      }
     }
+    c++;
   }
   return flag;
 }
