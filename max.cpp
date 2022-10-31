@@ -23,6 +23,8 @@ typedef std::istream_iterator<Point_2> point2_iterator; // iterator se points ap
 typedef std::vector<Point_2> Points;                    // vector me stoixeia point
 typedef std::vector<Segment_2> segments;                // vector me stoixeia pleurwn
 typedef std::vector<double> dist;
+typedef std::vector<int> areas;
+typedef std::vector<int> find;
 typedef std::vector<Point_2>::iterator pveciterator; // iterator se vector me ta point
 Point_2 pointdistance(Points, segments, dist);
 Point_2 pointdistance1(Points , segments , dist ,int );
@@ -41,6 +43,9 @@ int main()
   Polygon_2 p;                                   // to polugwno mou
   segments visible;                              // gia tis visible akmes
   dist dis;                                      // vector me apostaseis
+  areas areas;
+  find find;
+
   std::string line;
   std::ifstream in("input.txt");
   std::getline(in,line);
@@ -124,8 +129,10 @@ int main()
       temp.clear();
       c++;
     }
-    while(visible.size()!=0){
-      random=rand() % visible.size();
+    int counterr=0;
+    while(visible.size()>counterr){
+      random=counterr;
+      //random=rand() % visible.size();
       int e=0;
       while(e<chain.size()){
         if(visible[random]==chain[e]){/// PREPEI NA TSEKARW AFOU EINAI VISIBLE TO EDGE AN EFTIAXNA AUTO TO POLUGON THA HTAN SIMPLE KAI OTI DE THA EFEINA INTERIOR POINT STHN APEXW
@@ -154,11 +161,6 @@ int main()
         keep.push_back(chain[e][1]);
         e++;
       }
-      double re;
-      /*
-      CGAL::area_2(p.begin(),p.end(),re,K());
-      std::cout << re << std::endl;*/
-      //Auto gia ton upoligsimo emvadou
       e = 0;
       while (e < result1.size())
       {
@@ -171,16 +173,60 @@ int main()
         chain.erase(chain.begin()+pos);
         chain.insert(chain.begin()+pos,tempppp);
         result1.push_back(t);
-        visible.erase(std::find(visible.begin(), visible.end(), tempppp));
+        //visible.erase(std::find(visible.begin(), visible.end(), tempppp));
         if(visible.size()==0){
           pointcount++; //an gia auto to shmeio den vrw oratoe edge tote paw sto epomeno kontinotero shmeio
         }
       }
       else{
         pointcount=0;
-        break;
+        double re;
+        CGAL::area_2(p.begin(),p.end(),re,K());
+        areas.push_back(re);
+        find.push_back(counterr);
+        chain.erase(chain.begin()+pos);
+        chain.erase(chain.begin()+pos);
+        chain.insert(chain.begin()+pos,tempppp);
+        result1.push_back(t);
+        //Auto gia ton upoligsimo emvadou
+      }
+      counterr++;
+    }
+    if(pointcount==0){
+    int index;
+    index=std::distance(std::begin(areas), std::max_element(std::begin(areas), std::end(areas)));
+    random=find[index];
+      int e=0;
+      while(e<chain.size()){
+        if(visible[random]==chain[e]){/// PREPEI NA TSEKARW AFOU EINAI VISIBLE TO EDGE AN EFTIAXNA AUTO TO POLUGON THA HTAN SIMPLE KAI OTI DE THA EFEINA INTERIOR POINT STHN APEXW
+          pos=e;
+          break;
+        }
+        e++;
+      }
+      Segment_2 tempppp=chain[pos];
+      Point_2 temppp = Point_2(chain[pos][1]);
+      chain.insert(chain.begin() + pos, Segment_2(chain[pos][0], t));
+      chain.insert(chain.begin() + pos + 1, Segment_2(t, temppp)); // ta kanw ola auta gia na exw mia swsth seira me ta edges gia na ftiaxw eukola to polugwno
+      chain.erase(chain.begin() + pos + 2);
+      result1.erase(std::find(result1.begin(), result1.end(), t));
+      p.clear();
+      keep.clear();
+      e = 0;
+      p.push_back(chain[e][0]);
+      keep.push_back(chain[e][0]);
+      p.push_back(chain[e][1]);
+      keep.push_back(chain[e][1]);
+      e++;
+      while (e < chain.size() - 1)
+      {
+        p.push_back(chain[e][1]);
+        keep.push_back(chain[e][1]);
+        e++;
       }
     }
+    find.clear();
+    areas.clear();
     visible.clear();
   }
   int k=0;
@@ -188,9 +234,9 @@ int main()
     std::cout << chain[k][0] << "<----" << chain[k][1] << std::endl; 
     k++; 
   }
-  double area;
-  CGAL::area_2(p.begin(),p.end(),area,K());
-  std::cout << area << ": polygons area " << std::endl;
+  double areaa;
+  CGAL::area_2(p.begin(),p.end(),areaa,K());
+  std::cout << areaa << ": polygons area " << std::endl;
   CGAL::draw(p);
 }
 Point_2 pointdistance1(Points interior, segments ch, dist d,int count)
