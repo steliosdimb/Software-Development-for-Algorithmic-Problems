@@ -191,7 +191,7 @@ int main()
   double area;
   CGAL::area_2(p.begin(),p.end(),area,K());
   std::cout << area << ": polygons area " << std::endl;
-  CGAL::draw(p);
+  //CGAL::draw(p);
 }
 Point_2 pointdistance1(Points interior, segments ch, dist d,int count)
 { // sunarthsh upologismou apostashs apo ena edge se ena interior point
@@ -241,25 +241,40 @@ int findintersection(Segment_2 interioredge1, Segment_2 interioredge2, segments 
     auto result = CGAL::intersection(interioredge1, pchain[c]);
     if (result)
     {
-      Point_2 *p = boost::get<Point_2>(&*result); // Ah intersect an den exw intersect tha epistrefei to koino point ton edges(apo ekei pou tis enwnw)
-      if (pchain[c]==chainedge && *p == interioredge1[1])
+      if (const Segment_2 *s = boost::get<Segment_2>(&*result))
       {
-        flag=0;
+        flag=1;
       }
-      else{
-        flag =1;
+      else{  
+        Point_2 *p = boost::get<Point_2>(&*result);
+        if (pchain[c] == chainedge && *p == interioredge1[1])
+        {
+          flag = 0;
+        }
+        else
+        {
+          flag = 1;
+        }
       }
     }
     result = CGAL::intersection(interioredge2, pchain[c]);
     if (result)
     {
-      Point_2 *p = boost::get<Point_2>(&*result); // Ah intersect an den exw intersect tha epistrefei to koino point ton edges(apo ekei pou tis enwnw)
-      if (pchain[c]==chainedge && *p == interioredge2[1])
+      if (Segment_2 *s = boost::get<Segment_2>(&*result))
       {
-        flag = 0;
+        flag = 1;
       }
-      else{
-        flag=1;
+      else
+      {
+        Point_2 *p = boost::get<Point_2>(&*result);
+        if (pchain[c] == chainedge && *p == interioredge2[1])
+        {
+          flag = 0;
+        }
+        else
+        {
+          flag = 1;
+        }
       }
     }
     c++;
