@@ -1,4 +1,4 @@
-cgal_create_cmake_script
-cmake DCMAKE_BUILD_TYPE=Release .
+instructions:
+cmake -DCGAL_DIR=$CMAKE_INSTALLED_PREFIX/lib/CGAL -DCMAKE_BUILD_TYPE=Release .
 make
-./test
+./PROJECT -i input.txt -o outpout.txt -algorithm convex_hull -edge_selection 1 or 2 or 3
