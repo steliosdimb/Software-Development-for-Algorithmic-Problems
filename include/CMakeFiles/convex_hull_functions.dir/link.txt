@@ -1,2 +1,0 @@
-/usr/bin/ar qc libconvex_hull_functions.a CMakeFiles/convex_hull_functions.dir/convex_hull_functions.cpp.o
-/usr/bin/ranlib libconvex_hull_functions.a
