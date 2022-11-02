@@ -88,4 +88,6 @@ bool edge_exists(Point_2 a, Point_2 b, Segments chain){     //returns true if se
   }
   return flag!=0 ? true : false;
 
+
 }
+
