@@ -166,8 +166,4 @@ Segments create_segments(Points p){   //give ordered set of points to create vec
   }
   s.push_back(segment(p[p.size()-1], p[0]));
 
-  for(int i=0; i<s.size(); i++)
-    cout<<s[i]<<endl;
-  return s;
 }
-

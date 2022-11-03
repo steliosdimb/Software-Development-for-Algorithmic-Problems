@@ -3,7 +3,6 @@
 #include <CGAL/squared_distance_2.h>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/intersections.h>
-#include <CGAL/draw_polygon_2.h>
 #include <CGAL/Polygon_2_algorithms.h>
 #include "include/convex_hull_functions.hpp"
 #include <cstdlib>
@@ -15,139 +14,141 @@
 #include <cmath>
 #include <cstring>
 #include <chrono>
+
 using namespace std::chrono;
+
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef K::Point_2 Point_2;     // antikeimeno tupou point
-typedef K::Segment_2 Segment_2; // antikeimeno typou pleuras
-typedef CGAL::Polygon_2<K> Polygon_2;
-typedef std::istream_iterator<Point_2> point2_iterator; // iterator se points apo to input file
-typedef std::vector<Point_2> Points;                    // vector me stoixeia point
-typedef std::vector<Segment_2> segments;                // vector me stoixeia pleurwn
-typedef std::vector<double> dist;
-typedef std::vector<int> areas;
-typedef std::vector<int> find;
-typedef std::vector<Point_2>::iterator pveciterator; // iterator se vector me ta point
+typedef K::Point_2 Point_2; //Point_2 object
+typedef K::Segment_2 Segment_2; //Segment_2 object
+typedef CGAL::Polygon_2<K> Polygon_2; //Polygon_2 object 
+typedef std::vector<Point_2> Points;  //vector with Point_2 objects
+typedef std::vector<Segment_2> segments;  //vector with Segment_2 objects
+typedef std::vector<double> dist; //vector with distances from a point to an edge 
+typedef std::vector<int> areas; //vector with polugon areas
+typedef std::vector<int> find;  //vector with position of visible edges from an interior point(position in polygon chain)
+
 
 int main(int argc, char **argv)
 { 
-  auto start = high_resolution_clock::now();
-  std::ifstream in(argv[2]);
-  std::ofstream outfile;
-  outfile.open(argv[4]);
+  auto start = high_resolution_clock::now();  //start counting execution time for the program
+  std::ifstream in(argv[2]);  //input file
+  std::ofstream outfile;  
+  outfile.open(argv[4]);  //output file
   int flagalgo;
   if (strcmp("incremental",argv[6])==0)
   {
-    flagalgo=1;
+    flagalgo=1; //if -algorithm=incremental
   }
   else if (strcmp("convex_hull",argv[6])==0)
   {
-    flagalgo=2;
+    flagalgo=2; //if -algorithm=convex_hull
   }
   int flagedge;
   if (strcmp("1",argv[8])==0)
   {
-    flagedge=1;
+    flagedge=1; //if -edgeselection=random
   }
   else if (strcmp("2",argv[8])==0)
   {
-    flagedge=2;
+    flagedge=2; //if -edgeselection=min
   }
   else
   {
-    flagedge=3;
+    flagedge=3; //if -edgeselection=max
   }
-  srand((unsigned)time(NULL));
+  srand((unsigned)time(NULL));  //for the random number i create for random edge selection
   int j;
   int i;
   int e;
-  int k;
-  int random;
-  int counterr;
-  int numberofsegments;
-  int pointcount;
-  int flag;
-  int flag1;
-  int pos;
-  int index;
-  double area;
-  double re;
-  Points result;  // init vector me points gia to convex hull
-  Points result1; // init vector me points gia to sunolo ton eswterikwn points
-  Points result2; // init me ola ta poiints
-  Points keep;
-  segments chain;   // init polugwnikh alusida pou sh arxh einai isi me to convex hull
-  segments temp;    // gia temp edges
-  Polygon_2 p;      // to polugwno mou
-  segments visible; // gia tis visible akmes
-  dist dis;         // vector me apostaseis
-  areas areas;
-  find find;
+  int k;  //variables for for and while
+  int random; //random number i create for random edge selection
+  int counterr; //using this counter to check each visible edge in min max edge selection
+  int numberofsegments; //number of segments
+  int pointcount; //if its 0 then i found a visible edge for this point if its more than zero then i went to the next closest point of an edge to searh visible edges
+  int flag1;  //value 0 if the interior point is inside the polygon and 1 if outside the polygon
+  int pos;  //position of an edge in the polygon chain
+  int index;  //position of an edge in the polygon chain
+  double area;  //area of a polygon
+  double re;  //area of a polygon
+  double conarea; //convec hull area
+  Points result;  //init vector with convex hull's points
+  Points result1; //init vector with interior points
+  Points result2; //init vector with every point given from input
+  Points keep;  //init vector that keeps the temporary pollygon i make
+  segments chain; //init vector that keeps the polygon chain
+  segments temp;  //init vector with temporary edges needed
+  Polygon_2 p;      //init my polygon 
+  segments visible; //init vector that keeps the visible edges
+  dist dis; //init vector that keeps the distances between interior point and edges
+  areas areas;  //init vector with area of polygons
+  find find;  //init vector with position of visible edges from an interior point(position in polygon chain)
   std::string line;
+  std::getline(in, line); //skip the first two lines from input(we dont need them)
   std::getline(in, line);
-  std::getline(in, line); // anoigw arxeio (thelei kai alles epexergasies)
-  result2 = handleinput(in, result2);
-  std::copy(result2.begin(), result2.end(), std::back_inserter(result1));          // kanw copy sto vector result1 ta points                                                // paw xana sthn arxh tou arxeiou
-  CGAL::convex_hull_2(result2.begin(), result2.end(), std::back_inserter(result)); // vazei ta points apo to convex hull sto result (vector)
+  result2 = handleinput(in, result2); //function tha returns a vector with all the points given from the input file
+  std::copy(result2.begin(), result2.end(), std::back_inserter(result1)); //creating a copy of vector result2
+  CGAL::convex_hull_2(result2.begin(), result2.end(), std::back_inserter(result));  //geting the convex hull from all the points i have
+  CGAL::area_2(result.begin(), result.end(), conarea, K());
   for (j = 0; j < result.size(); j++)
   {
-    result1.erase(std::remove(result1.begin(), result1.end(), result[j]), result1.end()); // vgazw ta shmeia ta exwterika
+    result1.erase(std::remove(result1.begin(), result1.end(), result[j]), result1.end()); //erase the points from the convex hull so i can keep the interior points
   }
   numberofsegments = result.size();
   for (i = 0; i < numberofsegments - 1; i++)
   {
-    chain.push_back(Segment_2(result[i], result[i + 1]));
+    chain.push_back(Segment_2(result[i], result[i + 1])); //initialize the polugon chain,polugon chain should be equal with the convex hull at first
   }
-  chain.push_back(Segment_2(result[i], result[0])); // eftiaxa thn arxikh polugwnikh alusida
+  chain.push_back(Segment_2(result[i], result[0]));
   for (i = 0; i < result.size(); i++)
   {
-    p.push_back(result[i]);
-  } // to polugwno mou einai h polugwnikh alusida mou
-  if (flagalgo==2)
+    p.push_back(result[i]); //initializing polygon
+  }
+  if (flagalgo==2)  //if algorithm convex hull is selected
   {
-    pointcount = 0;
-    while (result1.size() != 0)
-    {            // oso to polugwno den periexei ola ta shmeia tou input kai den exw perilavei ola ta eswterika shmeia
-      Point_2 t; // to kontinotero interior point
+    pointcount = 0; //we are looking for the closest interior point from an edge
+    while (result1.size() != 0) //while my polygon does not contain every interior point
+    {           
+      Point_2 t; //t is the closest point from an edge
       i = 0;
       if (pointcount != 0)
       {
-        t = pointdistance1(result1, chain, dis, pointcount);
+        t = pointdistance1(result1, chain, dis, pointcount);  //couldnt find visible edge from this point find the next closest point
       }
       else
       {
-        t = pointdistance(result1, chain, dis); // h sunarthsh epistrefei gia kathe edge to shmeio me thn mikroterh apostash
+        t = pointdistance(result1, chain, dis); //function returns closest point from an edge
       }
-      if (flagedge == 1)
+      if (flagedge == 1)  //if edge selection random is selected
       {
         flag1 = 0;
-        visible = findvisible(t, temp, chain, visible);
-        while (visible.size() != 0)
+        visible = findvisible(t, temp, chain, visible); //function returns visible edges from the interior point t
+        while (visible.size() != 0) //check every visible edge
         {
-          random = rand() % visible.size();
+          random = rand() % visible.size(); //find a ranodm number
           e = 0;
           while (e < chain.size())
           {
             if (visible[random] == chain[e])
-            { /// PREPEI NA TSEKARW AFOU EINAI VISIBLE TO EDGE AN EFTIAXNA AUTO TO POLUGON THA HTAN SIMPLE KAI OTI DE THA EFEINA INTERIOR POINT STHN APEXW
-              pos = e;
+            { 
+              pos = e;  //find visible edge in the polygon chain
               break;
             }
             e++;
           }
-          Segment_2 tempppp = chain[pos];
-          Point_2 temppp = Point_2(chain[pos][1]);
-          chain.insert(chain.begin() + pos, Segment_2(chain[pos][0], t));
-          chain.insert(chain.begin() + pos + 1, Segment_2(t, temppp)); // ta kanw ola auta gia na exw mia swsth seira me ta edges gia na ftiaxw eukola to polugwno
+          Segment_2 tempppp = chain[pos]; //temp store the visible edge 
+          Point_2 temppp = Point_2(chain[pos][1]);  //temp store the second point of the edge
+          chain.insert(chain.begin() + pos, Segment_2(chain[pos][0], t)); //insert in chain at the position that the visible edge was found the new edge connecting with the interior point
+          chain.insert(chain.begin() + pos + 1, Segment_2(t, temppp)); 
           chain.erase(chain.begin() + pos + 2);
-          result1.erase(std::find(result1.begin(), result1.end(), t));
+          result1.erase(std::find(result1.begin(), result1.end(), t));  //delete the interior point
           p.clear();
           keep.clear();
           e = 0;
-          p.push_back(chain[e][0]);
-          keep.push_back(chain[e][0]);
+          p.push_back(chain[e][0]); //initialize the new polygon 
+          keep.push_back(chain[e][0]);  //make a copy of this polygon
           p.push_back(chain[e][1]);
           keep.push_back(chain[e][1]);
-          e++;
+          e++;  
           while (e < chain.size() - 1)
           {
             p.push_back(chain[e][1]);
@@ -157,20 +158,19 @@ int main(int argc, char **argv)
           e = 0;
           while (e < result1.size())
           {
-            flag1 = check_inside(result1[e], &*keep.begin(), &*keep.end(), K()); // check an me to neo edge pou ekana exw periklisei ola ta points kai den afhsa eswteriko point apexw apo to polugwno
+            flag1 = check_inside(result1[e], &*keep.begin(), &*keep.end(), K()); //check if with the new edges i made the polygon surrrounds every point
             e++;
           }
-          if (flag1 == 1 || p.is_simple() == 0)
-          { ///////SOSSSSS DEN EXW ELEGXEI KATHOLOU AN LEITOURGEI
-            // se periptwsh pou den prepei na travhxw authn thn grammh
+          if (flag1 == 1 || p.is_simple() == 0) //if with the new edges the polugon is not simple or the polugon does not surround every point i am backtracking
+          { 
             chain.erase(chain.begin() + pos);
             chain.erase(chain.begin() + pos);
-            chain.insert(chain.begin() + pos, tempppp);
-            result1.push_back(t);
-            visible.erase(std::find(visible.begin(), visible.end(), tempppp));
+            chain.insert(chain.begin() + pos, tempppp); //backtracking deleting the edges i created and bringing back the previous edge
+            result1.push_back(t); //pushing back again the interior point
+            visible.erase(std::find(visible.begin(), visible.end(), tempppp));  //deleting the visible edges because it doesnt meet the criteria
             if (visible.size() == 0)
             {
-              pointcount++; // an gia auto to shmeio den vrw oratoe edge tote paw sto epomeno kontinotero shmeio
+              pointcount++; //if there are not visible edges that meet the criteria need to search visible edge for the next close point
             }
           }
           else
@@ -181,28 +181,29 @@ int main(int argc, char **argv)
         }
         visible.clear();
       }
-      else if (flagedge==2 || flagedge==3)
+      else if (flagedge==2 || flagedge==3)  //if edge selection is min or max 
       {
         flag1 = 0;
         counterr = 0;
-        visible = findvisible(t, temp, chain, visible);
-        while (visible.size() > counterr)
+        visible = findvisible(t, temp, chain, visible); //finds visible edges
+        while (visible.size() > counterr) //checks every visible edge
         {
           random = counterr;
           e = 0;
           while (e < chain.size())
           {
             if (visible[random] == chain[e])
-            { /// PREPEI NA TSEKARW AFOU EINAI VISIBLE TO EDGE AN EFTIAXNA AUTO TO POLUGON THA HTAN SIMPLE KAI OTI DE THA EFEINA INTERIOR POINT STHN APEXW
+            { 
               pos = e;
               break;
             }
             e++;
-          }
+          } //finds visible edge position in chain
+          //same prosess as for random edge selection
           Segment_2 tempppp = chain[pos];
           Point_2 temppp = Point_2(chain[pos][1]);
           chain.insert(chain.begin() + pos, Segment_2(chain[pos][0], t));
-          chain.insert(chain.begin() + pos + 1, Segment_2(t, temppp)); // ta kanw ola auta gia na exw mia swsth seira me ta edges gia na ftiaxw eukola to polugwno
+          chain.insert(chain.begin() + pos + 1, Segment_2(t, temppp)); 
           chain.erase(chain.begin() + pos + 2);
           result1.erase(std::find(result1.begin(), result1.end(), t));
           p.clear();
@@ -222,57 +223,57 @@ int main(int argc, char **argv)
           e = 0;
           while (e < result1.size())
           {
-            flag1 = check_inside(result1[e], &*keep.begin(), &*keep.end(), K()); // check an me to neo edge pou ekana exw periklisei ola ta points kai den afhsa eswteriko point apexw apo to polugwno
+            flag1 = check_inside(result1[e], &*keep.begin(), &*keep.end(), K());
             e++;
           }
+          //same process
           if (flag1 == 1 || p.is_simple() == 0)
-          { ///////SOSSSSS DEN EXW ELEGXEI KATHOLOU AN LEITOURGEI
-            // se periptwsh pou den prepei na travhxw authn thn grammh
+          { 
             chain.erase(chain.begin() + pos);
             chain.erase(chain.begin() + pos);
             chain.insert(chain.begin() + pos, tempppp);
             result1.push_back(t);
-            // visible.erase(std::find(visible.begin(), visible.end(), tempppp));
             if (visible.size() == 0)
             {
-              pointcount++; // an gia auto to shmeio den vrw oratoe edge tote paw sto epomeno kontinotero shmeio
+              pointcount++;
             }
           }
           else
           {
+            //found visible edge that meets the criteria
             pointcount = 0;
-            CGAL::area_2(p.begin(), p.end(), re, K());
+            CGAL::area_2(p.begin(), p.end(), re, K()); //compute polugons area with the current edges
             areas.push_back(re);
-            find.push_back(counterr);
+            find.push_back(counterr); //store the position of the visible edge that meets the criteria
             chain.erase(chain.begin() + pos);
             chain.erase(chain.begin() + pos);
-            chain.insert(chain.begin() + pos, tempppp);
+            chain.insert(chain.begin() + pos, tempppp); //backtrack for more visible edges that meet the criteria
             result1.push_back(t);
-            // Auto gia ton upoligsimo emvadou
           }
-          counterr++;
+          counterr++; //go to the next edge
         }
-        if (pointcount == 0)
+        if (pointcount == 0) //found visible edge
         {
-          if (flagedge == 2)
+          if (flagedge == 2)  //if edge selection =min
           {
-            index = std::distance(std::begin(areas), std::min_element(std::begin(areas), std::end(areas)));
+            index = std::distance(std::begin(areas), std::min_element(std::begin(areas), std::end(areas))); //find min area 
           }
-          else if (flagedge==3)
+          else if (flagedge==3) //if edge selection =max
           {
-            index = std::distance(std::begin(areas), std::max_element(std::begin(areas), std::end(areas)));
+            index = std::distance(std::begin(areas), std::max_element(std::begin(areas), std::end(areas))); //find max area
           }
-          random = find[index];
+          random = find[index]; //this is the index of the visible edge that makes a polygon with min/max area
           e = 0;
-          while (e < chain.size())
+          while (e < chain.size())  //finding the edge in polygon chain
           {
             if (visible[random] == chain[e])
-            { /// PREPEI NA TSEKARW AFOU EINAI VISIBLE TO EDGE AN EFTIAXNA AUTO TO POLUGON THA HTAN SIMPLE KAI OTI DE THA EFEINA INTERIOR POINT STHN APEXW
+            { 
               pos = e;
               break;
             }
             e++;
           }
+          //same process creating the edges that make a polygon with min/max area
           Segment_2 tempppp = chain[pos];
           Point_2 temppp = Point_2(chain[pos][1]);
           chain.insert(chain.begin() + pos, Segment_2(chain[pos][0], t));
@@ -299,6 +300,7 @@ int main(int argc, char **argv)
         visible.clear();
       }
     }
+    //printing the resutlts
     k = 0;
     outfile << "Polygonization" << std::endl;
     while(k<p.size()){
@@ -314,7 +316,7 @@ int main(int argc, char **argv)
     outfile << "Algorithm: convex_hull edge selection " << flagedge << std::endl;
     CGAL::area_2(p.begin(), p.end(), area, K());
     outfile << "area: " << area << std::endl;
-    outfile << "ratio: 1" << std::endl;
+    outfile << "ratio: " << conarea/area << std::endl;
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
     outfile << "construction time: " << duration.count() << " ms " << std::endl;
