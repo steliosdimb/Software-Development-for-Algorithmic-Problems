@@ -1,4 +1,3 @@
-
 #include <ordering.h>
 
 int main(){
@@ -10,7 +9,7 @@ int main(){
   Segments chain; //gia thn alusida
   pveciterator p1;
   pveciterator p2;
-  polygon p;
+  Polygon p;
 
 
   std::string line;
@@ -48,11 +47,8 @@ int main(){
 
   std::copy(result2.begin(), result2.end(), std::back_inserter(result)); // kanw copy sto vector result1 ta points                                                // paw xana sthn arxh tou arxeiou
 
-  std::cout << result.size() << " points on the convex hull" << std::endl;
-
   if(result.size()>=3){         //sxhmatizw trigvno poy sto temp
     for(int i=0; i<3; i++){      
-      int n=result.size();
       Point_2 t = result[i];    
       temp.push_back(t);
     }
@@ -74,19 +70,23 @@ int main(){
     chain.push_back(segment(temp[i], temp[i + 1]));
   }
   
-  incremental(result, temp, chain);
-
-  // CGAL::convex_hull_points_2(temp.begin(), temp.end(), std::back_inserter(convex_hull));
+  //incremental(result, temp, chain);
+  init_2a(result2);
+  CGAL::convex_hull_2(result2.begin(), result2.end(), std::back_inserter(convex_hull));
+  int d = convex_hull.size();
+  std::cout << d << " points on the convex hull" << std::endl;
+  for(int i=0; i<convex_hull.size(); i++){
+    cout<<convex_hull[i]<<" -> "; 
+    p.push_back(convex_hull[i]);
+  }
 
   // for (pveciterator iter=convex_hull.begin(); iter!=convex_hull.end(); iter++){
   //     std::cout << *iter << std::endl;
   //     p.push_back(*iter);}
 
-  //auta epanw einai ola ta ekswterika shmeia tou convex hull
 
-  //init_1a(result);
 
-  //CGAL::draw(p);
+  CGAL::draw(p);
 
   return 0;
 

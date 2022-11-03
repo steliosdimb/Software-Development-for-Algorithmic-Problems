@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <fstream>
 #include <algorithm>    // std::sort
-#
+
 
 using namespace std;
 
@@ -24,7 +24,7 @@ typedef std::vector<segment>::iterator segiterator;      //iterator gia segments
 typedef std::vector<segment> Segments;    //vector gia segments
 typedef std::vector<Point_2> Points;   //vector gia points
 typedef std::vector<double> distance;   
-typedef CGAL::Polygon_2<K> polygon;
+typedef CGAL::Polygon_2<K> Polygon;
 
 
 bool comp1a(Point_2 pt1, Point_2 pt2) { return (pt1.x() < pt2.x());}
@@ -33,9 +33,15 @@ bool comp2a(Point_2 pt1, Point_2 pt2) { return (pt1.y() < pt2.y());}
 bool comp2b(Point_2 pt1, Point_2 pt2) { return (pt1.y() > pt2.y());}
 
 void init_1a(Points p);
-void incremental(Points result, Points curr_points, Segments segments);
-bool equal_segments(segment a, segment b);
+void init_1b(Points p);
+void init_2a(Points p);
+void init_2b(Points p);
 
+void incremental(Points result, Points curr_points, Segments segments, Segments );
+bool equal_segments(segment a, segment b);
+bool edge_exists(Point_2 a, Point_2 b, Segments chain);
+Segments create_segments(Points p);
+int find_red_segments(segment k, Points curr_points, Points convex_hull);
 
 void init_1a(Points p){
     std::sort(p.begin(), p.end(), comp1a);
@@ -43,27 +49,91 @@ void init_1a(Points p){
       std::cout << *iter << std::endl;
 }
 
-void incremental(Points result, Points curr_points, Segments segments){
+void init_1b(Points p){
+    std::sort(p.begin(), p.end(), comp1b);
+    for (pveciterator iter=p.begin(); iter!=p.end(); iter++)
+      std::cout << *iter << std::endl;
+}
+void init_2a(Points p){
+    std::sort(p.begin(), p.end(), comp2a);
+    for (pveciterator iter=p.begin(); iter!=p.end(); iter++)
+      std::cout << *iter << std::endl;
+}
+void init_2b(Points p){
+    std::sort(p.begin(), p.end(), comp2b);
+    for (pveciterator iter=p.begin(); iter!=p.end(); iter++)
+      std::cout << *iter << std::endl;
+}
+
+void incremental(Points result, Points curr_points, Segments convex_seg, Segments chain_seg){
   Points convex_hull;   
+  Points red_points;
   CGAL::convex_hull_points_2(curr_points.begin(), curr_points.end(), std::back_inserter(convex_hull));    //create convex hull for curr points
   pveciterator k = result.begin();   //brhskw to neo shmeio k
-  pveciterator p = curr_points.begin()+curr_points.size()-1;   //brhskw to teleutaio shmeio apo to curr_points
-  cout<<*p<<endl;   
-  for(int i=0; i<curr_points.size(); i++){
-    find_red_segments(segment(*k, curr_points[i]), curr_points, convex_hull); //briskw an exei kokkini akmh
 
+  pveciterator p = curr_points.begin()+curr_points.size()-1;   //brhskw to teleutaio shmeio apo to curr_points
+
+  for(int i=0; i<curr_points.size(); i++){
+    if(!find_red_segments(segment(*k, convex_hull[i]), convex_hull, convex_hull)){ //briskw an exei kokkini akmh
+        red_points.push_back(convex_hull[i]);
+    }
+  }
+  if(!red_points.empty()){
+    Segments red_segments;
+    for(int i=0; i<convex_hull.size(); i++){
+      for(int j=1; j<convex_hull.size(); j++){
+        if(edge_exists(red_points[i], red_points[j], convex_seg)){
+          red_segments.push_back(segment(red_points[i], red_points[j]));
+        }
+      }
+    }
   }
 }
 
-Points find_red_segments(segment k, Points curr_points, Points convex_hull){
+int find_red_segments(segment k, Points curr_points, Points convex_hull){
+    int flag;
     for(int i = 0; i<curr_points.size(); i++){
+      flag=-1;
       if(i==curr_points.size()-1){
-          auto result = CGAL::intersection(k, segment(curr_points[i], curr_points[1]));
+        auto result = CGAL::intersection(k, segment(curr_points[i], curr_points[0]));
+        if (const segment *s = boost::get<segment>(&*result))
+        {
+          flag=1;
+        }
+        else{  
+          Point_2 *p = boost::get<Point_2>(&*result);
+        if (std::find(curr_points.begin(), curr_points.end(), *p) == curr_points.end())  //an den uparxei stis korufes
+          {
+            flag = 0;
+          }
+        else
+          {
+            flag = 1;
+          }
+      }
       }
       else{
           auto result = CGAL::intersection(k, segment(curr_points[i], curr_points[i+1]));
+          if(result){
+            if (const segment *s = boost::get<segment>(&*result))
+              {
+                flag=1;
+              }
+            else{  
+                Point_2 *p = boost::get<Point_2>(&*result);
+                if (std::find(curr_points.begin(), curr_points.end(), *p) != curr_points.end())
+                {
+                  flag = 0;
+                }
+                else
+                {
+                  flag = 1;
+                }
+            }
           }
+        }
     }
+    return flag;
     
 }
 
@@ -87,5 +157,17 @@ bool edge_exists(Point_2 a, Point_2 b, Segments chain){     //returns true if se
       flag=0;
   }
   return flag!=0 ? true : false;
-
 }
+
+Segments create_segments(Points p){   //give ordered set of points to create vector of segments
+  Segments s;
+  for(int i=0; i<p.size(); i++){
+    s.push_back(segment(p[i],p[i+1]));
+  }
+  s.push_back(segment(p[p.size()-1], p[0]));
+
+  for(int i=0; i<s.size(); i++)
+    cout<<s[i]<<endl;
+  return s;
+}
+
