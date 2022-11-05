@@ -2,11 +2,12 @@
 
 int main(){
   Points convex_hull;   //shmeia convex hull
-  Points temp;
-  Points result;  //gia to apotelesma
+  Points temp;    //points pou exoyn mpei sto polugwno
+  Points result;  //points pou apomenoun 
   Points result1;
-  Points result2;
-  Segments chain; //gia thn alusida
+  Points result2;   //ola ta points
+  Segments chain; //segments ths polugwnikhs alusidas
+  Segments convex_seg; //segments toy convex hull
   pveciterator p1;
   pveciterator p2;
   Polygon p;
@@ -70,25 +71,31 @@ int main(){
     chain.push_back(segment(temp[i], temp[i + 1]));
   }
   
-  //incremental(result, temp, chain);
   init_2a(result2);
-  CGAL::convex_hull_2(result2.begin(), result2.end(), std::back_inserter(convex_hull));
+  CGAL::convex_hull_2(temp.begin(), temp.end(), std::back_inserter(convex_hull));
   int d = convex_hull.size();
-  std::cout << d << " points on the convex hull" << std::endl;
   for(int i=0; i<convex_hull.size(); i++){
-    cout<<convex_hull[i]<<" -> "; 
     p.push_back(convex_hull[i]);
   }
 
-  // for (pveciterator iter=convex_hull.begin(); iter!=convex_hull.end(); iter++){
-  //     std::cout << *iter << std::endl;
-  //     p.push_back(*iter);}
+  convex_seg = create_segments(temp);
+  Segments chain1;
+  //std::cout << result.size() << std::endl;
+  chain1=incremental(result,  temp, convex_seg, chain);
+  //std::cout << result.size() << std::endl;
 
-
-
+  p.clear();
+  int e=0;
+  p.push_back(chain1[e][0]);    // initialize the new polygon
+  p.push_back(chain1[e][1]);
+  e++;
+  while (e < chain1.size() - 1)
+  {
+    p.push_back(chain1[e][1]);
+    e++;
+  }
   CGAL::draw(p);
-
   return 0;
 
-
 }
+
