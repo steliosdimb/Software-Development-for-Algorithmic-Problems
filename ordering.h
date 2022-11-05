@@ -33,10 +33,10 @@ bool comp1b(Point_2 pt1, Point_2 pt2) { return (pt1.x() > pt2.x());}
 bool comp2a(Point_2 pt1, Point_2 pt2) { return (pt1.y() < pt2.y());}
 bool comp2b(Point_2 pt1, Point_2 pt2) { return (pt1.y() > pt2.y());}
 
-void init_1a(Points p);
-void init_1b(Points p);
-void init_2a(Points p);
-void init_2b(Points p);
+Points init_1a(Points p);
+Points init_1b(Points p);
+Points init_2a(Points p);
+Points init_2b(Points p);
 
 Segments incremental(Points result, Points curr_points, Segments segments, Segments );
 bool equal_segments(segment a, segment b);
@@ -45,26 +45,22 @@ Segments create_segments(Points p);
 int find_red_segments(segment k, Points convex_hull, Segments chain);
 segment error = segment(Point_2(-1,-1), Point_2(-1,-1));
 
-void init_1a(Points p){
+Points init_1a(Points p){
     std::sort(p.begin(), p.end(), comp1a);
-    for (pveciterator iter=p.begin(); iter!=p.end(); iter++)
-      std::cout << *iter << std::endl;
+    return p;
 }
 
-void init_1b(Points p){
+Points init_1b(Points p){
     std::sort(p.begin(), p.end(), comp1b);
-    for (pveciterator iter=p.begin(); iter!=p.end(); iter++)
-      std::cout << *iter << std::endl;
+    return p;
 }
-void init_2a(Points p){
+Points init_2a(Points p){
     std::sort(p.begin(), p.end(), comp2a);
-    for (pveciterator iter=p.begin(); iter!=p.end(); iter++)
-      std::cout << *iter << std::endl;
+    return p;
 }
-void init_2b(Points p){
+Points init_2b(Points p){
     std::sort(p.begin(), p.end(), comp2b);
-    for (pveciterator iter=p.begin(); iter!=p.end(); iter++)
-      std::cout << *iter << std::endl;
+    return p;
 }
 
 
@@ -103,24 +99,9 @@ Segments incremental(Points result, Points curr_points, Segments convex_seg, Seg
       convex_seg.push_back(segment(convex_hull[i], convex_hull[i + 1]));
     }
 
-    // int ek=0;
-    // while(ek<curr_points.size()){
-    //   std::cout << curr_points[ek] << " curr" << std::endl;
-    //   ek++;
-    // }
-    // ek=0;
-    // while(ek<chain_seg.size()){
-    //   std::cout <<"chain     "<< chain_seg[ek] << std::endl;
-      
-    //   ek++;
-    // }
-    // ek=0;
-    // while(ek<convex_seg.size()){
-    //   std::cout <<"convex    "<< convex_seg[ek] << std::endl;
-    //   ek++;
-    // }
 
     Point_2 k = result[0]; // brhskw to neo shmeio k
+    cout<<"new point is "<<k<<endl;
 
     for (int i = 0; i < convex_hull.size(); i++)
     { 
@@ -132,9 +113,6 @@ Segments incremental(Points result, Points curr_points, Segments convex_seg, Seg
       }
       
     }
-    // for(i=0;i<red_points.size();i++){
-    //   std::cout <<"red point  "<< red_points[i] << std::endl;
-    // }
 
     if (!red_points.empty())
     { // ean exw kapoies korufes tou convex hull poy einai kokkines
@@ -152,11 +130,6 @@ Segments incremental(Points result, Points curr_points, Segments convex_seg, Seg
       }
     }
     
-    // ek=0;
-    // while(ek<curr_points.size()){
-    //   std::cout << curr_points[ek] << " curr" << std::endl;
-    //   ek++;
-    // }
     red_points.clear();
     Points tempp=curr_points;
     // if no visible edges in convex hull then search in polygon chain
@@ -170,10 +143,7 @@ Segments incremental(Points result, Points curr_points, Segments convex_seg, Seg
         { // briskw an exei kokkini akmh
           red_points.push_back(curr_points[i]);
         }
-      }
-    //   for(i=0;i<red_points.size();i++){
-    //   std::cout << red_points[i] << std::endl;
-    // } 
+      } 
       if (!red_points.empty())
       { // ean exw kapoies korufes poy einai kokkines
         for (int i = 0; i < red_points.size(); i++)
@@ -192,14 +162,8 @@ Segments incremental(Points result, Points curr_points, Segments convex_seg, Seg
       }
     }
 
-    // i=0;
-    // while(i<red_segments_final.size()){
-    //   std::cout <<"red segment ==" <<red_segments_final[i] << std::endl;
-    //   i++;
-    // }
     while (red_segments_final.size() > 0)
     {
-      //std::cout << k << "  point " << std::endl;
       int random = rand() % red_segments_final.size();
 
       int i = 0;
@@ -213,21 +177,11 @@ Segments incremental(Points result, Points curr_points, Segments convex_seg, Seg
         }
         i++;
       }
-      //std::cout << chain_seg[pos] << " segment " << std::endl;
       segment tempppp = chain_seg[pos];
 
       Point_2 temppp = Point_2(chain_seg[pos][1]);
-      int ek=0;
-    // while(ek<curr_points.size()){
-    //   //std::cout << curr_points[ek] << " currr" << std::endl;
-    //   ek++;
-    // }
+
       curr_points.push_back(k);
-      ek=0;
-    // while(ek<curr_points.size()){
-    //   //std::cout << curr_points[ek] << " currrr" << std::endl;
-    //   ek++;
-    // }
       chain_seg.insert(chain_seg.begin() + pos, segment(chain_seg[pos][0], k));
  // insert in chain at the position that the visible edge was found the new edge connecting with the interior point
       chain_seg.insert(chain_seg.begin() + pos + 1, segment(k, temppp));
@@ -263,7 +217,7 @@ Segments incremental(Points result, Points curr_points, Segments convex_seg, Seg
         break;
       }
     }
-    //CGAL::draw(p);
+    CGAL::draw(p);
   }
 
   return chain_seg;
@@ -301,69 +255,6 @@ int find_red_segments(segment k, Points convex_hull, Segments chain){
             }
     }
 
-
-
-    // for(int i = 0; i<convex_hull.size(); i++){
-    //   flag=-1;
-    //   cout<<i<<endl;
-    //   if(i==(convex_hull.size()-1)){
-    //     if(std::find(chain.begin(), chain.end(), segment(convex_hull[i], convex_hull[0])) != chain.end()){
-    //       auto result =CGAL::intersection(k, segment(convex_hull[i], convex_hull[0]));
-    //       if (result)
-    //         {
-    //         if (const segment *s = boost::get<segment>(&*result))
-    //         {
-    //           flag = 1;
-    //           counter++;
-    //         }
-    //         else
-    //         {
-    //           Point_2 *p = boost::get<Point_2>(&*result);
-
-    //           if (std::find(convex_hull.begin(), convex_hull.end(), *p) != convex_hull.end())
-    //           {
-    //             flag = 0;
-    //           }
-    //           else
-    //             {
-    //             cout<<" point of intersection asssssss"<<*p<<endl;
-    //             flag = 1;
-    //             counter++;
-    //             }
-    //           }
-    //         }
-    //       }
-    //     }
-    //   else{
-    //     auto result = CGAL::intersection(k, segment(convex_hull[i], convex_hull[i + 1]));
-    //     if (result)
-    //       {
-    //       if (const segment *s = boost::get<segment>(&*result))
-    //       {
-    //         flag = 1;
-    //         counter++;
-    //       }
-    //       else
-    //       {
-    //         Point_2 *p = boost::get<Point_2>(&*result);
-
-    //         if (std::find(convex_hull.begin(), convex_hull.end(), *p) != convex_hull.end())
-    //         {
-    //           flag = 0;
-    //         }
-    //         else
-    //         {
-    //             cout<<" point of intersection "<<*p<<endl;
-    //             cout<<k<<" "<<convex_hull[i]<<" "<<convex_hull[i+1]<<endl;
-
-    //           flag = 1;
-    //           counter++;
-    //         }
-    //       }
-    //   }
-    //   }
-    // }
-    // cout<<counter<<"counter"<<endl;
     return counter == 0 ? 0 : 1;
     
 }

@@ -47,6 +47,11 @@ int main(){
   }
 
   std::copy(result2.begin(), result2.end(), std::back_inserter(result)); // kanw copy sto vector result1 ta points                                                // paw xana sthn arxh tou arxeiou
+  cout<<"sorting"<<endl;
+  result = init_2a(result);
+  for(int i=0; i<result.size(); i++){
+    cout<<result[i]<<endl;
+  }
 
   if(result.size()>=3){         //sxhmatizw trigvno poy sto temp
     for(int i=0; i<3; i++){      
@@ -71,7 +76,6 @@ int main(){
     chain.push_back(segment(temp[i], temp[i + 1]));
   }
   
-  init_2a(result2);
   CGAL::convex_hull_2(temp.begin(), temp.end(), std::back_inserter(convex_hull));
   int d = convex_hull.size();
   for(int i=0; i<convex_hull.size(); i++){
@@ -81,6 +85,19 @@ int main(){
   convex_seg = create_segments(temp);
   Segments chain1;
   //std::cout << result.size() << std::endl;
+  cout<<"temp is "<<endl;
+  for(int i=0; i<temp.size(); i++){
+    cout<<temp[i]<<endl;
+  }
+  cout<<"result is"<<endl;
+  for(int i=0; i<result.size(); i++){
+    cout<<result[i]<<endl;
+  }
+  cout<<"\n\n";
+
+
+
+
   chain1=incremental(result,  temp, convex_seg, chain);
   //std::cout << result.size() << std::endl;
 
