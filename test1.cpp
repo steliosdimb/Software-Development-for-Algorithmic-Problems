@@ -98,7 +98,9 @@ int main(){
 
 
 
-  chain1=incremental(result,  temp, convex_seg, chain);
+  //chain1= incremental_min(result,  temp, convex_seg, chain);
+  chain1= incremental_max(result,  temp, convex_seg, chain);
+
   //std::cout << result.size() << std::endl;
 
   p.clear();

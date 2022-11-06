@@ -13,6 +13,7 @@ using namespace std;
 
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef std::vector<int> Areas;
 
 typedef K::Segment_2 segment;   //antikeimeno pleuras
 typedef K::Point_2 Point_2;     //antikeimeno shmeiou
@@ -38,6 +39,8 @@ Points init_1b(Points p);
 Points init_2a(Points p);
 Points init_2b(Points p);
 
+Segments incremental_min(Points result, Points curr_points, Segments segments, Segments );
+Segments incremental_max(Points result, Points curr_points, Segments convex_seg, Segments chain_seg);
 Segments incremental(Points result, Points curr_points, Segments segments, Segments );
 bool equal_segments(segment a, segment b);
 segment edge_exists(Point_2 a, Point_2 b, Segments chain);
@@ -62,6 +65,425 @@ Points init_2b(Points p){
     std::sort(p.begin(), p.end(), comp2b);
     return p;
 }
+
+
+Segments incremental_min(Points result, Points curr_points, Segments convex_seg, Segments chain_seg){
+  Points convex_hull;
+  Points red_points;
+  Segments red_segments_convex;
+  Segments red_segments_chain;
+  Segments red_segments_final;
+  Polygon p;
+  Polygon keep;
+  Areas areas;
+  Areas find;
+
+  while (result.size() != 0)
+  {
+    red_points.clear();
+    convex_hull.clear();
+    convex_seg.clear();
+    red_segments_final.clear();
+    
+    CGAL::convex_hull_2(curr_points.begin(), curr_points.end(), std::back_inserter(convex_hull)); // create convex hull for curr points
+    
+    int numberofsegments = convex_hull.size();
+    int i;
+
+    for (i = 0; i < numberofsegments; i++) // arxikopoiw to convex_seg me ta 3 segments
+    {
+      if (i == numberofsegments - 1)
+      {
+        convex_seg.push_back(segment(convex_hull[numberofsegments - 1], convex_hull[0]));
+        break;
+      }
+
+      convex_seg.push_back(segment(convex_hull[i], convex_hull[i + 1]));
+    }
+
+
+    Point_2 k = result[0]; // brhskw to neo shmeio k
+    cout<<"new point is "<<k<<endl;
+
+    for (int i = 0; i < convex_hull.size(); i++)
+    { 
+      int res = find_red_segments(segment(k, convex_hull[i]), convex_hull, convex_seg);
+      
+      if (!res)
+      { // briskw an exei kokkini akmh
+        red_points.push_back(convex_hull[i]);
+      }
+      
+    }
+
+    if (!red_points.empty())
+    { // ean exw kapoies korufes tou convex hull poy einai kokkines
+      for (int i = 0; i < red_points.size(); i++)
+      {
+        for (int j = 1; j < red_points.size(); j++)
+        {
+          segment temp = edge_exists(red_points[i], red_points[j], convex_seg);
+          //std::cout << temp << std::endl;
+          if(edge_exists(temp[0], temp[1], chain_seg) != error){
+            if(std::find(red_segments_final.begin(), red_segments_final.end(), edge_exists(temp[0], temp[1], chain_seg))==red_segments_final.end())
+              red_segments_final.push_back(edge_exists(temp[0], temp[1], chain_seg));
+          }
+        }
+      }
+    }
+    
+    red_points.clear();
+    Points tempp=curr_points;
+    // if no visible edges in convex hull then search in polygon chain
+    if (red_segments_final.size() == 0)
+    {
+      for (int i = 0; i < curr_points.size(); i++)
+      { 
+        //std::cout << segment(k,curr_points[i]) << std::endl;
+        int res = find_red_segments(segment(k, curr_points[i]), curr_points, chain_seg);
+        if (!res)
+        { // briskw an exei kokkini akmh
+          red_points.push_back(curr_points[i]);
+        }
+      } 
+      if (!red_points.empty())
+      { // ean exw kapoies korufes poy einai kokkines
+        for (int i = 0; i < red_points.size(); i++)
+        {
+          for (int j = 1; j < red_points.size(); j++)
+          {
+            segment temp = edge_exists(red_points[i], red_points[j], chain_seg);
+            //cout<<temp<<"temp is "<<endl;
+            if (temp!=error)
+            { // for every combination of red edges check if they match a segment in CH
+              if(std::find(red_segments_final.begin(), red_segments_final.end(), temp)==red_segments_final.end())
+                red_segments_final.push_back(temp);
+            }
+          }
+        }
+      }
+    }
+
+    int min=0;
+    int pos;
+    int min_index=0;
+    while (min<red_segments_final.size())
+    {
+
+      int i = 0;
+      while (i < chain_seg.size())
+      {
+        if (red_segments_final[min] == chain_seg[i])
+        {
+          pos = i;
+          break;
+        }
+        i++;
+      }
+      segment tempppp = chain_seg[pos];
+      Point_2 temppp = Point_2(chain_seg[pos][1]);
+      curr_points.push_back(k);
+      chain_seg.insert(chain_seg.begin() + pos, segment(chain_seg[pos][0], k));
+ // insert in chain at the position that the visible edge was found the new edge connecting with the interior point
+      chain_seg.insert(chain_seg.begin() + pos + 1, segment(k, temppp));
+      chain_seg.erase(chain_seg.begin() + pos + 2);
+      result.erase(result.begin());
+
+      p.clear();
+      keep.clear();
+      int e = 0;
+      p.push_back(chain_seg[e][0]);    // initialize the new polygon
+      keep.push_back(chain_seg[e][0]); // make a copy of this polygon
+      p.push_back(chain_seg[e][1]); 
+      keep.push_back(chain_seg[e][1]);
+      e++;
+      while (e < chain_seg.size() - 1)
+      {
+        p.push_back(chain_seg[e][1]);
+        keep.push_back(chain_seg[e][1]);
+        e++;
+      }
+
+      if (p.is_simple() == 0) // if with the new edges the polugon is not simple or the polugon does not surround every point i am backtracking
+      {
+        chain_seg.erase(chain_seg.begin() + pos);
+        chain_seg.erase(chain_seg.begin() + pos);
+        chain_seg.insert(chain_seg.begin() + pos, tempppp);                                                 // backtracking deleting the edges i created and bringing back the previous edge
+        result.insert(result.begin(),k) ;                                  
+        curr_points.pop_back();                                           // pushing back again the interior point
+        //red_segments_final.erase(std::find(red_segments_final.begin(), red_segments_final.end(), tempppp)); // deleting the visible edges because it doesnt meet the criteria
+      }
+      else
+      {
+        double re;
+        CGAL::area_2(p.begin(),p.end(),re,K());
+        cout<<"res iis "<<abs(re)<<endl;
+        areas.push_back(re);
+        find.push_back(min);
+        chain_seg.erase(chain_seg.begin() + pos);
+        chain_seg.erase(chain_seg.begin() + pos);
+        chain_seg.insert(chain_seg.begin() + pos, tempppp);                                                 // backtracking deleting the edges i created and bringing back the previous edge
+        result.insert(result.begin(),k) ;                                  
+        curr_points.pop_back(); 
+      }
+      min++;
+    }
+
+    i = 0;
+    int index=std::distance(std::begin(areas), std::min_element(std::begin(areas), std::end(areas)));
+    min_index=find[index];
+    while (i < chain_seg.size())
+    {
+      if (red_segments_final[min_index] == chain_seg[i])
+      {
+        pos = i;
+        break;
+      }
+      i++;
+    }
+    segment tempppp = chain_seg[pos];
+
+    Point_2 temppp = Point_2(chain_seg[pos][1]);
+
+    curr_points.push_back(k);
+    chain_seg.insert(chain_seg.begin() + pos, segment(chain_seg[pos][0], k));
+    // insert in chain at the position that the visible edge was found the new edge connecting with the interior point
+    chain_seg.insert(chain_seg.begin() + pos + 1, segment(k, temppp));
+    chain_seg.erase(chain_seg.begin() + pos + 2);
+    result.erase(result.begin());
+
+    p.clear();
+    keep.clear();
+    int e = 0;
+    p.push_back(chain_seg[e][0]);    // initialize the new polygon
+    keep.push_back(chain_seg[e][0]); // make a copy of this polygon
+    p.push_back(chain_seg[e][1]);
+    keep.push_back(chain_seg[e][1]);
+    e++;
+    while (e < chain_seg.size() - 1)
+    {
+      p.push_back(chain_seg[e][1]);
+      keep.push_back(chain_seg[e][1]);
+      e++;
+    }
+    find.clear();
+    areas.clear();
+    //CGAL::draw(p);
+  }
+
+
+  return chain_seg;
+}
+
+
+Segments incremental_max(Points result, Points curr_points, Segments convex_seg, Segments chain_seg){
+  Points convex_hull;
+  Points red_points;
+
+  Segments red_segments_convex;
+  Segments red_segments_chain;
+  Segments red_segments_final;
+  Polygon p;
+  Polygon keep;
+
+  Areas areas;
+  Areas find;
+
+  while (result.size() != 0)
+  {
+    red_points.clear();
+    convex_hull.clear();
+    convex_seg.clear();
+    red_segments_final.clear();
+    
+    CGAL::convex_hull_2(curr_points.begin(), curr_points.end(), std::back_inserter(convex_hull)); // create convex hull for curr points
+    
+    int numberofsegments = convex_hull.size();
+    int i;
+
+    for (i = 0; i < numberofsegments; i++) // arxikopoiw to convex_seg me ta 3 segments
+    {
+      if (i == numberofsegments - 1)
+      {
+        convex_seg.push_back(segment(convex_hull[numberofsegments - 1], convex_hull[0]));
+        break;
+      }
+
+      convex_seg.push_back(segment(convex_hull[i], convex_hull[i + 1]));
+    }
+
+
+    Point_2 k = result[0]; // brhskw to neo shmeio k
+    cout<<"new point is "<<k<<endl;
+
+    for (int i = 0; i < convex_hull.size(); i++)
+    { 
+      int res = find_red_segments(segment(k, convex_hull[i]), convex_hull, convex_seg);
+      
+      if (!res)
+      { // briskw an exei kokkini akmh
+        red_points.push_back(convex_hull[i]);
+      }
+      
+    }
+
+    if (!red_points.empty())
+    { // ean exw kapoies korufes tou convex hull poy einai kokkines
+      for (int i = 0; i < red_points.size(); i++)
+      {
+        for (int j = 1; j < red_points.size(); j++)
+        {
+          segment temp = edge_exists(red_points[i], red_points[j], convex_seg);
+          //std::cout << temp << std::endl;
+          if(edge_exists(temp[0], temp[1], chain_seg) != error){
+            if(std::find(red_segments_final.begin(), red_segments_final.end(), edge_exists(temp[0], temp[1], chain_seg))==red_segments_final.end())
+              red_segments_final.push_back(edge_exists(temp[0], temp[1], chain_seg));
+          }
+        }
+      }
+    }
+    
+    red_points.clear();
+    Points tempp=curr_points;
+    // if no visible edges in convex hull then search in polygon chain
+    if (red_segments_final.size() == 0)
+    {
+      for (int i = 0; i < curr_points.size(); i++)
+      { 
+        //std::cout << segment(k,curr_points[i]) << std::endl;
+        int res = find_red_segments(segment(k, curr_points[i]), curr_points, chain_seg);
+        if (!res)
+        { // briskw an exei kokkini akmh
+          red_points.push_back(curr_points[i]);
+        }
+      } 
+      if (!red_points.empty())
+      { // ean exw kapoies korufes poy einai kokkines
+        for (int i = 0; i < red_points.size(); i++)
+        {
+          for (int j = 1; j < red_points.size(); j++)
+          {
+            segment temp = edge_exists(red_points[i], red_points[j], chain_seg);
+            //cout<<temp<<"temp is "<<endl;
+            if (temp!=error)
+            { // for every combination of red edges check if they match a segment in CH
+              if(std::find(red_segments_final.begin(), red_segments_final.end(), temp)==red_segments_final.end())
+                red_segments_final.push_back(temp);
+            }
+          }
+        }
+      }
+    }
+
+    int max=0;
+    int pos;
+    int max_index=0;
+
+    while (max<red_segments_final.size())
+    {
+      int i = 0;
+      while (i < chain_seg.size())
+      {
+        if (red_segments_final[max] == chain_seg[i])
+        {
+          pos = i;
+          break;
+        }
+        i++;
+      }
+      segment tempppp = chain_seg[pos];
+      Point_2 temppp = Point_2(chain_seg[pos][1]);
+      curr_points.push_back(k);
+      chain_seg.insert(chain_seg.begin() + pos, segment(chain_seg[pos][0], k));
+ // insert in chain at the position that the visible edge was found the new edge connecting with the interior point
+      chain_seg.insert(chain_seg.begin() + pos + 1, segment(k, temppp));
+      chain_seg.erase(chain_seg.begin() + pos + 2);
+      result.erase(result.begin());
+
+      p.clear();
+      keep.clear();
+      int e = 0;
+      p.push_back(chain_seg[e][0]);    // initialize the new polygon
+      keep.push_back(chain_seg[e][0]); // make a copy of this polygon
+      p.push_back(chain_seg[e][1]); 
+      keep.push_back(chain_seg[e][1]);
+      e++;
+      while (e < chain_seg.size() - 1)
+      {
+        p.push_back(chain_seg[e][1]);
+        keep.push_back(chain_seg[e][1]);
+        e++;
+      }
+
+      if (p.is_simple() == 0) // if with the new edges the polugon is not simple or the polugon does not surround every point i am backtracking
+      {
+        chain_seg.erase(chain_seg.begin() + pos);
+        chain_seg.erase(chain_seg.begin() + pos);
+        chain_seg.insert(chain_seg.begin() + pos, tempppp);                                                 // backtracking deleting the edges i created and bringing back the previous edge
+        result.insert(result.begin(),k) ;                                  
+        curr_points.pop_back();                                           // pushing back again the interior point
+      }
+      else
+      {
+        double re;
+        CGAL::area_2(p.begin(),p.end(),re,K());
+        areas.push_back(re);
+        find.push_back(max);
+        chain_seg.erase(chain_seg.begin() + pos);
+        chain_seg.erase(chain_seg.begin() + pos);
+        chain_seg.insert(chain_seg.begin() + pos, tempppp);                                                 // backtracking deleting the edges i created and bringing back the previous edge
+        result.insert(result.begin(),k) ;                                  
+        curr_points.pop_back(); 
+      }
+      max++;
+    }
+    int index = std::distance(std::begin(areas), std::max_element(std::begin(areas), std::end(areas)));
+    max_index = find[index];
+    i = 0;
+    while (i < chain_seg.size())
+    {
+      if (red_segments_final[max_index] == chain_seg[i])
+      {
+        pos = i;
+        break;
+      }
+      i++;
+    }
+    segment tempppp = chain_seg[pos];
+    Point_2 temppp = Point_2(chain_seg[pos][1]);
+
+    curr_points.push_back(k);
+    chain_seg.insert(chain_seg.begin() + pos, segment(chain_seg[pos][0], k));
+    // insert in chain at the position that the visible edge was found the new edge connecting with the interior point
+    chain_seg.insert(chain_seg.begin() + pos + 1, segment(k, temppp));
+    chain_seg.erase(chain_seg.begin() + pos + 2);
+    result.erase(result.begin());
+
+    p.clear();
+    keep.clear();
+    int e = 0;
+    p.push_back(chain_seg[e][0]);    // initialize the new polygon
+    keep.push_back(chain_seg[e][0]); // make a copy of this polygon
+    p.push_back(chain_seg[e][1]);
+    keep.push_back(chain_seg[e][1]);
+    e++;
+    while (e < chain_seg.size() - 1)
+    {
+      p.push_back(chain_seg[e][1]);
+      keep.push_back(chain_seg[e][1]);
+      e++;
+    }
+
+    //CGAL::draw(p);
+    find.clear();
+    areas.clear();
+  }
+
+
+  return chain_seg;
+}
+
+
 
 
 Segments incremental(Points result, Points curr_points, Segments convex_seg, Segments chain_seg){
@@ -270,7 +692,7 @@ bool equal_segments(segment a, segment b){     //returns true if a has same cord
 }
 
 
-segment edge_exists(Point_2 a, Point_2 b, Segments chain){     //returns true if seg(a,b) exists in chain
+segment edge_exists(Point_2 a, Point_2 b, Segments chain){     //returns segment if seg(a,b) exists in chain else returns error segment
   if (std::find(chain.begin(), chain.end(), segment(a, b)) != chain.end())
       return segment(a, b);
   else if (std::find(chain.begin(), chain.end(), segment(b, a)) != chain.end())
@@ -279,12 +701,6 @@ segment edge_exists(Point_2 a, Point_2 b, Segments chain){     //returns true if
     return error;
 }
 
-bool test(segment a, segment b){
-  if(a.source() == b.source() && a.target() == b.target())
-      return true;
-  else 
-    return false;
-}
 
 Segments create_segments(Points p){   //give ordered set of points to create vector of segments
   Segments s;
