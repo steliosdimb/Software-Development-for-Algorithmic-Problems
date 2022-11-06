@@ -30,11 +30,11 @@ endif()
 
 # include for local directory
 add_subdirectory(include)
-list(APPEND EXTRA_LIBS convex_hull_functions)
+list(APPEND EXTRA_LIBS Polygon_functions)
 # include for local package
 
 
-# Creating entries for target: polyg
+
 # ############################
 
 add_executable( PROJECT PROJECT.cpp )

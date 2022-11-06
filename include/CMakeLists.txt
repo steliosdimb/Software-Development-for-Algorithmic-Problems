@@ -1,1 +1,1 @@
-add_library(convex_hull_functions convex_hull_functions.cpp)
+add_library(Polygon_functions Polygon_functions.cpp)
