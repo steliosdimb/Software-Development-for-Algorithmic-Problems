@@ -336,7 +336,7 @@ int main(int argc, char **argv)
     outfile << "Algorithm: convex_hull edge selection " << flagedge << std::endl;
     CGAL::area_2(p.begin(), p.end(), area, K());
     outfile << "Calculated area: " << abs(area) << std::endl;
-    outfile << "ratio: " << conarea / abs(area) << std::endl;
+    outfile << "ratio: " << abs(area) / abs(conarea) << std::endl;
     auto stop = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(stop - start);
     outfile << "construction time: " << duration.count() << " ms " << std::endl;
